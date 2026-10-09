@@ -33,7 +33,7 @@ function Stepper({ step }: { step: Step }) {
             >
               {state === 'done' ? '✓' : n}
             </span>
-            <span className={`truncate ${state === 'current' ? 'font-semibold' : 'text-stone-600'}`}>{label}</span>
+            <span className={`truncate ${state === 'current' ? 'font-semibold' : 'hidden text-stone-600 min-[400px]:inline'}`}>{label}</span>
             {n < 3 && <span className="h-px flex-1 bg-stone-300" aria-hidden />}
           </li>
         );
