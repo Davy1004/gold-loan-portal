@@ -1,0 +1,36 @@
+name: CI
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: gold
+          POSTGRES_PASSWORD: gold
+          POSTGRES_DB: goldloan
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U gold -d goldloan"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Typecheck and build
+        run: npm run build
+      - name: Tests on embedded Postgres (PGlite)
+        run: npm test
+      - name: Server tests on real PostgreSQL (real advisory-lock concurrency)
+        run: npm run test -w server
+        env:
+          TEST_DATABASE_URL: postgres://gold:gold@localhost:5432/goldloan
+      - name: Agent evals (mock model)
+        run: npm run eval

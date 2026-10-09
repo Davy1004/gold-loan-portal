@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --color-ink: #1c1917;
+  --color-gold-50: #fffbeb;
+  --color-gold-100: #fef3c7;
+  --color-gold-500: #d97706;
+  --color-gold-600: #b45309;
+  --color-gold-700: #92400e;
+  --color-forest-50: #f0fdf4;
+  --color-forest-600: #15803d;
+  --color-forest-800: #14532d;
+  --color-forest-900: #0f3d21;
+}
+
+html { -webkit-text-size-adjust: 100%; }
+body { @apply bg-stone-50 text-ink antialiased; font-family: var(--font-sans); }
+
+:where(button, input, select, a, [role="radio"]):focus-visible {
+  outline: 3px solid var(--color-gold-500);
+  outline-offset: 2px;
+}
+
+.field-input {
+  @apply w-full min-h-11 rounded-lg border border-stone-300 bg-white px-3 py-2 text-base text-ink placeholder:text-stone-400;
+}
+.field-input[aria-invalid="true"] { @apply border-red-600 bg-red-50/40; }
+
+.btn {
+  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-5 py-2 text-base font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+}
+.btn-primary { @apply bg-forest-800 text-white hover:bg-forest-900; }
+.btn-secondary { @apply border border-stone-300 bg-white text-ink hover:bg-stone-100; }
+.btn-gold { @apply bg-gold-600 text-white hover:bg-gold-700; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
