@@ -18,7 +18,7 @@ export const config = {
   llmProvider: (process.env.LLM_PROVIDER ?? 'mock').toLowerCase(),
   gemini: {
     apiKey: process.env.GEMINI_API_KEY ?? '',
-    model: process.env.GEMINI_MODEL ?? 'gemini-2.5-flash',
+    model: process.env.GEMINI_MODEL ?? 'gemini-3.1-flash-lite',
     baseUrl:
       process.env.GEMINI_BASE_URL ?? 'https://generativelanguage.googleapis.com/v1beta/openai',
   },

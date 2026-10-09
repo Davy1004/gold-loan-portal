@@ -12,6 +12,24 @@ import { SYSTEM_PROMPT } from './prompt.js';
 import { calculateQuoteArgs, coerceNumericFields, TOOL_DEFS } from './tools.js';
 import type { ChatMessage, LlmProvider, ToolCall } from './types.js';
 
+/**
+ * Adds ready-made Indian-format strings ("₹2,16,562") next to the numeric amounts so the model copies them
+ * verbatim instead of formatting (or doing any maths on) numbers itself.
+ */
+function withDisplay(q: Awaited<ReturnType<typeof calculateQuote>>) {
+  return {
+    ...q,
+    goldValueDisplay: formatRupees(Math.round(Number(q.goldValueRupees))),
+    plans: q.plans.map((p) => ({
+      ...p,
+      eligibleLoanDisplay: formatRupees(p.eligibleLoanRupees),
+      ...(p.monthlyInstalmentRupees !== undefined ? { monthlyInstalmentDisplay: formatRupees(p.monthlyInstalmentRupees) } : {}),
+      totalInterestDisplay: formatRupees(p.totalInterestRupees),
+      totalRepayableDisplay: formatRupees(p.totalRepayableRupees),
+    })),
+  };
+}
+
 export interface PendingSummary {
   token: string;
   summary: {
@@ -172,7 +190,7 @@ export class AgentService {
       case 'calculate_quote': {
         const p = calculateQuoteArgs.safeParse(args);
         if (!p.success) return validationError(p.error);
-        return await calculateQuote(this.db, p.data);
+        return withDisplay(await calculateQuote(this.db, p.data));
       }
 
       case 'submit_application': {
@@ -209,7 +227,11 @@ export class AgentService {
         return {
           status: 'AWAITING_USER_CONFIRMATION',
           note: 'NOT submitted. The borrower must press Confirm in the app. Do not say it has been submitted.',
-          summary: view.summary,
+          summary: {
+            ...view.summary,
+            eligibleLoanDisplay: formatRupees(plan.eligibleLoanRupees),
+            ...(plan.monthlyInstalmentRupees !== undefined ? { monthlyInstalmentDisplay: formatRupees(plan.monthlyInstalmentRupees) } : {}),
+          },
         };
       }
 

@@ -36,6 +36,29 @@ describe('OpenAI-compatible adapter (Gemini / Ollama) - tested against a stubbed
     expect(body.messages[2].tool_calls[0]).toEqual({ id: 'x', type: 'function', function: { name: 'get_loan_schemes', arguments: '{}' } });
   });
 
+  it('echoes provider extra_content (Gemini 3 thought_signature) back on the next turn', async () => {
+    const sig = { google: { thought_signature: 'SIG123' } };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        reply(200, { choices: [{ message: { content: null, tool_calls: [{ id: 'c1', type: 'function', extra_content: sig, function: { name: 'get_loan_schemes', arguments: '{}' } }] } }] }),
+      )
+      .mockResolvedValueOnce(reply(200, { choices: [{ message: { content: 'ok' } }] }));
+    vi.stubGlobal('fetch', fetchMock);
+    const first = await provider().chat([{ role: 'user', content: 'hi' }], TOOL_DEFS);
+    expect(first.toolCalls[0].extra).toEqual(sig);
+    await provider().chat(
+      [
+        { role: 'user', content: 'hi' },
+        { role: 'assistant', content: null, tool_calls: first.toolCalls },
+        { role: 'tool', tool_call_id: 'c1', name: 'get_loan_schemes', content: '{"data":[]}' },
+      ],
+      TOOL_DEFS,
+    );
+    const body = JSON.parse(fetchMock.mock.calls[1][1].body);
+    expect(body.messages[1].tool_calls[0].extra_content).toEqual(sig);
+  });
+
   it('returns plain text replies', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reply(200, { choices: [{ message: { content: 'Hello' } }] })));
     expect(await provider().chat([{ role: 'user', content: 'hi' }], TOOL_DEFS)).toEqual({ content: 'Hello', toolCalls: [] });

@@ -63,6 +63,15 @@ These cases must pass as unit and API tests:
 * **The test that now catches it.** `server/tests/db.test.ts` boots a database in a directory tree that does not exist yet, migrates, seeds, closes, reopens it and checks the data
   persisted. I confirmed it fails with the same `ENOENT` when the fix is removed.
 
+## 3b. Second real mistake: the live Gemini run (found only by calling a real model)
+
+* **What happened.** Everything passed against my scripted mock model, but the first real `LLM_PROVIDER=gemini npm run eval` failed 0/7. The chat showed only "The assistant hit a problem", which hid the cause. Digging in showed two separate faults:
+  1. The default model `gemini-2.5-flash` returned HTTP 404: Google no longer serves it to new keys (the error message names the replacement). I changed the default and documented it.
+  2. Gemini 3 models attach a `thought_signature` to every tool call and reject the next turn with HTTP 400 if it is not sent back. My adapter dropped it, so every conversation that used a tool died on its second step. I confirmed with raw requests that the same call succeeds when the signature is echoed back.
+* **Fix.** Tool calls now carry the provider's `extra_content` through the agent and the adapter sends it back unchanged. `server/tests/openai.test.ts` has a regression test for it.
+* **A third, smaller finding from the live run.** The real model wrote amounts as "₹216,562" instead of Indian grouping, and prepared the application as soon as the user gave their details instead of asking first. Tool results now include ready-made `*Display` strings ("₹2,16,562") that the prompt tells the model to copy verbatim, and the prompt requires a read-back plus an explicit yes before `submit_application` (the Confirm button remains the real gate).
+* **Result.** After the fixes, all 7 conversations passed live (`gemini-3.1-flash-lite`, free tier), and the mock eval (32/32) and the unit tests still pass. A lighter model also skipped asking for the gross weight once; the prompt now says that a single weight must be treated as unconfirmed.
+
 ## 4. Other mistakes and catches along the way (all real)
 
 1. **Wrong hand-calculated test expectation.** An "exactness" test expected Rs 160,416 for 33.333 g at 22K/75% (hand arithmetic). The code returned 160,415; recomputing by hand
@@ -79,5 +88,5 @@ These cases must pass as unit and API tests:
 
 ## 5. What was not verified
 
-* A live LLM (Gemini / Ollama) was **not** called. The adapter is tested against a stubbed HTTP endpoint only.
-* The UI was **not** opened in a real browser (none available in the build environment): behaviour is covered by component tests with a stubbed API, and the layout at 375 px is by design, not by eye.
+* Live LLM: tested against Gemini only (`gemini-3.1-flash-lite`, free tier, 9 Oct 2026; 7/7 conversations). Ollama was **not** run, and a live model's wording varies run to run, so results can differ slightly.
+* The UI was checked by hand in a real browser (portrait 375 px and landscape): the apply flow, admin table with masked mobile, and chat panel. That check found the step labels clipping at 320 px, fixed. It is otherwise covered by component tests with a stubbed API.

@@ -44,15 +44,13 @@ simple phrasings ("45 grams net, 50 grams gross, 22 carat..."). For free-form co
 
 | `LLM_PROVIDER` | Setup | Notes |
 |---|---|---|
-| `gemini` | `GEMINI_API_KEY=...` (free key from https://aistudio.google.com/apikey), optional `GEMINI_MODEL` (default `gemini-2.5-flash`) | Uses Gemini's OpenAI-compatible endpoint. 429s are retried with backoff, then shown as "assistant is busy, try again". |
+| `gemini` | `GEMINI_API_KEY=...` (free key from https://aistudio.google.com/apikey), optional `GEMINI_MODEL` (default `gemini-3.1-flash-lite`; Google retired `gemini-2.5-flash` for new keys, so check https://ai.google.dev/gemini-api/docs/models if a model name returns 404) | Uses Gemini's OpenAI-compatible endpoint. 429s are retried with backoff, then shown as "assistant is busy, try again". |
 | `ollama` | `ollama serve` and `ollama pull qwen2.5:7b`; optional `OLLAMA_MODEL` | No key, fully local. Small local models can be unreliable at tool calling. |
 | `mock` | nothing | Default. |
 
-> **Honest status of the live path:** the Gemini/Ollama adapter is covered by tests against a stubbed endpoint (request shape, tool-call
-> parsing, 429 retry, error handling), but I could not call a live model from the environment this was built in. Everything *around* the model
-> (tool validation, confirmation gate, duplicate handling) is model-independent and tested. After adding a key, run
-> `LLM_PROVIDER=gemini npm run eval` to check a real model against the same conversations. The checks assert on outcomes, not exact wording,
-> but a live model may phrase things differently enough to trip the wording-based ones (e.g. "asks for gross weight").
+> **Status of the live path:** on 9 Oct 2026 I ran `LLM_PROVIDER=gemini npm run eval` against Gemini (`gemini-3.1-flash-lite`, free tier). All 7 conversations passed
+> (5 required + 2 bonus). The first live run failed 0/7 and found two real bugs (see AI_LOG.md section 3b), now fixed. Free-tier quotas are small and per-model;
+> a long run can hit a daily 429, in which case set `GEMINI_MODEL` to another flash model. The default `mock` provider is deterministic and needs no key.
 
 ## API (`/api/v1`)
 

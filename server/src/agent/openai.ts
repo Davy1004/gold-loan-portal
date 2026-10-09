@@ -34,6 +34,7 @@ export function openAiCompatible(o: Opts): LlmProvider {
                 id: c.id,
                 type: 'function',
                 function: { name: c.name, arguments: c.arguments },
+                ...(c.extra !== undefined ? { extra_content: c.extra } : {}),
               })),
             };
           }
@@ -79,6 +80,7 @@ export function openAiCompatible(o: Opts): LlmProvider {
             name: c.function?.name ?? '',
             arguments:
               typeof c.function?.arguments === 'string' ? c.function.arguments : JSON.stringify(c.function?.arguments ?? {}),
+            ...(c.extra_content !== undefined ? { extra: c.extra_content } : {}),
           })),
         };
       }

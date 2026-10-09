@@ -3,6 +3,8 @@ export interface ToolCall {
   name: string;
   /** JSON string exactly as the model produced it (may be malformed - the executor handles that). */
   arguments: string;
+  /** Opaque provider data that must be echoed back unchanged (Gemini 3 'thought_signature' lives here). */
+  extra?: unknown;
 }
 
 export type ChatMessage =
